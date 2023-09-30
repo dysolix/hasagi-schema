@@ -230,7 +230,7 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
     if(endpoint.path?.startsWith("/lol-"))
         tags.push("Plugin " + endpoint.path.split("/")[1])
     else if(endpoint.path?.startsWith("/{plugin}"))
-        tags.push("asset-serving");
+        tags.push("Plugin Asset Serving");
     else 
         tags.push(endpoint.path!.split("/")[1])
 
@@ -238,7 +238,7 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
     return {
         operationId: endpoint.name,
         description: endpoint.description,
-        tags: _tags,
+        tags,
         parameters,
         requestBody,
         responses: {
