@@ -10,6 +10,11 @@ function getRootType(input: Type): SchemaObject | ReferenceObject {
     const required: string[] = [];
     const properties: Record<string, SchemaObject | ReferenceObject> = {}
     input.fields.forEach(f => {
+        if(properties[f.name] !== undefined) {
+            console.log(`Duplicate field '${f.name}' in type '${input.name}'`)
+            return;
+        }
+
         properties[f.name] = getType(f)!;
         if(!f.optional)
             required.push(f.name)
@@ -21,50 +26,8 @@ function getRootType(input: Type): SchemaObject | ReferenceObject {
         properties: isObject ? properties : undefined,
         enum: isEnum ? input.values.sort((v1, v2) => v2.value - v1.value).map(v => v.name) : undefined,
         additionalProperties: !isObject && !isEnum,
-        required
+        required: required.length > 0 ? required : undefined
     }
-
-    /* if (isRoot) {
-        
-    } else {
-        let type: string | undefined = input.type.type;
-
-        switch (type) {
-            case "string":
-                return { type: "string" }
-
-            case "uint8":
-            case "uint16":
-            case "uint32":
-            case "uint64":
-                return { type: "integer", format: type, minimum: 0 }
-            case "int8":
-            case "int16":
-            case "int32":
-            case "int64":
-                return { type: "integer", format: type }
-            case "bool":
-                return { type: "boolean" }
-            case "double":
-            case "float":
-                return { type: "number", format: type }
-
-            case "vector":
-                const arrElementType = getType(input.type.elementType);
-                return {
-                    type: "array",
-                    items: arrElementType
-                }
-            case "map":
-                const mapElementType = getType(input.type.elementType);
-                return {
-                    additionalProperties: mapElementType
-                }
-
-            default:
-                return { $ref: `#/components/schemas/${type}` }
-        }
-    } */
 }
 
 function getType(input: { type: { elementType: string; type: string; }; } | string): SchemaObject | ReferenceObject | undefined {
@@ -156,7 +119,7 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
     let response: ResponseObject = { description: "Success response" };
     let requestBody: RequestBodyObject = undefined!;
 
-    if (endpoint.method === "GET") {
+    if (endpoint.method === "GET" || endpoint.method === "DELETE" || endpoint.method === "HEAD" || endpoint.method === "OPTIONS" || endpoint.method === "TRACE") {
         parameters = endpoint.pathParams?.map(param => {
             const p = endpoint.arguments.find(arg => arg.name.replace("+", "") === param.replace("+", ""));
 
