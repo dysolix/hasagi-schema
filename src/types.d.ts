@@ -33,6 +33,7 @@ export interface Endpoint {
     method: string | null;
     path: string | null;
     pathParams: string[] | null;
+    overridden?: boolean;
 }
 
 interface Type {

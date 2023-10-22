@@ -1,5 +1,6 @@
 import { HasagiClient } from "@hasagi/core";
 import fs from "fs/promises";
+import { Endpoint, ExtendedHelp } from "./types.js";
 
 type Schema = { types: any[], functions: any[], events: any[] }
 
@@ -98,6 +99,74 @@ async function getExtendedHelp(includeRawData?: boolean): Promise<Schema | { ext
         extendedSchema.events.push(fullEvent[0]);
     }
 
+    const FUNCTION_OVERRIDES: Record<string, Partial<Endpoint>> = {
+        "Help": {
+            method: "get",
+            path: "/help"
+        },
+        "Subscribe": {
+            method: "post",
+            path: "/subscribe"
+        },
+        "Unsubscribe": {
+            method: "post",
+            path: "/unsubscribe"
+        },
+        "AsyncDelete": {
+            method: "post",
+            path: "/AsyncDelete"
+        },
+        "AsyncResult": {
+            method: "post",
+            path: "/AsyncResult"
+        },
+        "AsyncStatus": {
+            method: "post",
+            path: "/AsyncStatus"
+        },
+        "Cancel": {
+            method: "post",
+            path: "/cancel"
+        },
+        "Exit": {
+            method: "post",
+            path: "/exit"
+        },
+        "WebSocketFormat": {
+            method: "post",
+            path: "/WebSocketFormat"
+        },
+        "LoggingGetEntries": {
+            method: "post",
+            path: "/LoggingGetEntries"
+        },
+        "LoggingMetrics": {
+            method: "post",
+            path: "/LoggingMetrics"
+        },
+        "LoggingMetricsMetadata": {
+            method: "post",
+            path: "/LoggingMetricsMetadata"
+        },
+        "LoggingStart": {
+            method: "post",
+            path: "/LoggingStart"
+        },
+        "LoggingStop": {
+            method: "post",
+            path: "/LoggingStop"
+        },
+    }
+
+    extendedSchema.functions.forEach((func: Endpoint) => {
+        const override = FUNCTION_OVERRIDES[func.name];
+        if (!override)
+            return;
+
+        Object.assign(func, override);
+        func.overridden = true;
+    });
+
     if (includeRawData)
         return {
             extendedSchema,
@@ -109,9 +178,3 @@ async function getExtendedHelp(includeRawData?: boolean): Promise<Schema | { ext
 }
 
 export { getExtendedHelp };
-
-/* if (outputRawData) {
-    await fs.writeFile("./schema/data/fullSchema.json", JSON.stringify(fullSchema, null, 4));
-    await fs.writeFile("./schema/data/consoleSchema.json", JSON.stringify(consoleSchema, null, 4));
-    await fs.writeFile("./schema/dasta/extendedSchema.json", JSON.stringify(extendedSchema, null, 4));
-} */

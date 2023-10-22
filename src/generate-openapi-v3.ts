@@ -10,13 +10,13 @@ function getRootType(input: Type): SchemaObject | ReferenceObject {
     const required: string[] = [];
     const properties: Record<string, SchemaObject | ReferenceObject> = {}
     input.fields.forEach(f => {
-        if(properties[f.name] !== undefined) {
+        if (properties[f.name] !== undefined) {
             console.log(`Duplicate field '${f.name}' in type '${input.name}'`)
             return;
         }
 
         properties[f.name] = getType(f)!;
-        if(!f.optional)
+        if (!f.optional)
             required.push(f.name)
     })
 
@@ -69,13 +69,15 @@ export async function generateOpenAPIv3(schema: ExtendedHelp) {
     const client = new HasagiLiteClient();
     await client.connect();
     const region = await client.request({ method: "get", url: "/riotclient/region-locale" });
-    const version: string = await axios.get(`https://ddragon.leagueoflegends.com/realms/${region.webRegion}.json`).then(res => res.data.v);
+    const { version } = await client.request({ method: "get", url: "/system/v1/builds" });
+
+    const functionsWithMissingData: string[] = [];
 
     const openAPISchema: OpenAPIObject = {
         openapi: "3.0.0",
         info: {
             title: "LCU SCHEMA",
-            description: "Auto-generated using LCU's /help endpoint. Some endpoints are not included because their /help response is missing necessary fields.",
+            description: "",
             version
         },
         components: { schemas: {} },
@@ -85,6 +87,10 @@ export async function generateOpenAPIv3(schema: ExtendedHelp) {
     let tags: string[] = [];
     schema.types.forEach(type => openAPISchema.components!.schemas![type.name] = getRootType(type));
     schema.functions.forEach(func => {
+        if (func.overridden) {
+            functionsWithMissingData.push(func.name);
+        }
+
         if (func.method === null || func.path === null) {
             console.log(`Function '${func.name}' does not have a http method or path.`)
             return;
@@ -92,9 +98,52 @@ export async function generateOpenAPIv3(schema: ExtendedHelp) {
 
         openAPISchema.paths[func.path] = openAPISchema.paths[func.path] ?? {}
         const operation = endpointToOperation(func, openAPISchema);
-        tags.push(...operation.tags!.filter(tag => !tags.includes(tag)))
         // @ts-expect-error
         openAPISchema.paths[func.path][func.method.toLowerCase()] = operation;
+    })
+
+    let tagCount: Record<string, number> = {};
+    Object.entries(openAPISchema.paths).forEach(([path, methods]) => {
+        Object.values(methods).forEach((operation: OperationObject) => {
+            operation.tags?.forEach(tag => tagCount[tag] = (tagCount[tag] ?? 0) + 1);
+        })
+    })
+
+    Object.entries(openAPISchema.paths).forEach(([path, methods]) => {
+        Object.values(methods).forEach((operation: OperationObject) => {
+            operation.tags = operation.tags?.filter(tag => tagCount[tag] > 1 || tag.startsWith("Plugin")) ?? [];
+
+            if ((operation.tags?.length ?? 0) < 1) {
+                operation.tags = [path.split("/")[1]]
+            }
+
+            if (operation.tags.length === 0)
+                operation.tags.push("other");
+
+            operation.tags = operation.tags.map(tag => tag.startsWith("Plugin") ? tag : tag.toLowerCase());
+        })
+    })
+
+    tagCount = {};
+
+    Object.entries(openAPISchema.paths).forEach(([path, methods]) => {
+        Object.values(methods).forEach((operation: OperationObject) => {
+            operation.tags?.forEach(tag => tagCount[tag] = (tagCount[tag] ?? 0) + 1);
+        })
+    })
+
+    Object.entries(openAPISchema.paths).forEach(([path, methods]) => {
+        Object.values(methods).forEach((operation: OperationObject) => {
+            operation.tags = operation.tags?.filter(tag => tagCount[tag] > 1 || tag.startsWith("Plugin")) ?? [];
+            if (operation.tags!.length === 0)
+                operation.tags!.push("other");
+
+            operation.tags = operation.tags!
+                .map(tag => tag.startsWith("Plugin") ? tag : tag.toLowerCase())
+                .map(tag => tag.replace("$", ""));
+
+            tags.push(...operation.tags!.filter(tag => !tags.includes(tag)));
+        })
     })
 
     openAPISchema.tags = tags.map(tag => {
@@ -108,8 +157,35 @@ export async function generateOpenAPIv3(schema: ExtendedHelp) {
         if (!t1.name.includes("Plugin") && t2.name.includes("Plugin"))
             return -1;
 
+        if(t1.name.includes("Plugin") && t2.name.includes("Plugin")) {
+            if(t1.name.includes("Plugin lol") && !t2.name.includes("Plugin lol"))
+                return 1;
+
+            if(!t1.name.includes("Plugin lol") && t2.name.includes("Plugin lol"))
+                return -1;
+        }
+
+        if (t1.name == "other" && t2.name != "other")
+            return 1;
+
+        if (t1.name != "other" && t2.name == "other")
+            return -1;
+
         return t1.name.localeCompare(t2.name)
     })
+
+    let i = 1;
+    openAPISchema.info.description =
+        `
+Auto-generated using LCU's /help endpoint.
+The following endpoints are not entirely auto-generated because their /help response is missing necessary fields:
+
+${functionsWithMissingData.map(func => `${i++}.\t${func}`).join("\n")}
+
+### Disclaimer
+
+dysolix.dev is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. 
+Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc`
 
     return openAPISchema;
 }
@@ -119,18 +195,29 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
     let response: ResponseObject = { description: "Success response" };
     let requestBody: RequestBodyObject = undefined!;
 
-    if (endpoint.method === "GET" || endpoint.method === "DELETE" || endpoint.method === "HEAD" || endpoint.method === "OPTIONS" || endpoint.method === "TRACE") {
-        parameters = endpoint.pathParams?.map(param => {
-            const p = endpoint.arguments.find(arg => arg.name.replace("+", "") === param.replace("+", ""));
+    parameters = endpoint.pathParams?.map(param => {
+        const p = endpoint.arguments.find(arg => arg.name.replace("+", "") === param.replace("+", ""));
 
-            return {
-                in: "path",
-                name: param,
-                required: true,
-                schema: p === undefined ? { type: "string" } : getType(p)
-            }
-        }) ?? [];
+        return {
+            in: "path",
+            name: param,
+            required: true,
+            schema: p === undefined ? { type: "string" } : getType(p)
+        }
+    }) ?? [];
 
+    const nonPathParam = endpoint.arguments.slice(endpoint.pathParams?.length ?? 0);
+    if (nonPathParam.length > 1) {
+        //console.log(`Endpoint '${endpoint.name}' has more than one non-path parameter.`)
+        nonPathParam.forEach(arg => {
+            parameters.push({
+                in: "query",
+                name: arg.name,
+                schema: getType(arg),
+                required: !arg.optional
+            });
+        });
+    } else if (endpoint.method === "GET" || endpoint.method === "DELETE" || endpoint.method === "HEAD" || endpoint.method === "OPTIONS" || endpoint.method === "TRACE") {
         const params: ParameterObject[] = endpoint.arguments.slice(parameters.length).flatMap(arg => {
             const type = getType(arg);
             if ("$ref" in type!) {
@@ -164,17 +251,6 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
         const returnType = getType({ type: endpoint.returns })
         response = { content: { "application/json": { schema: returnType } }, description: "Success response" }
     } else {
-        parameters = endpoint.pathParams?.map(param => {
-            const p = endpoint.arguments.find(arg => arg.name.replace("+", "") === param.replace("+", ""));
-
-            return {
-                in: "path",
-                name: param,
-                required: true,
-                schema: p === undefined ? { type: "string" } : getType(p)
-            }
-        }) ?? [];
-
         const bodyType = endpoint.arguments.slice(parameters.length).at(0);
         if (bodyType)
             requestBody = {
@@ -190,18 +266,17 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
     }
 
     const tags: string[] = [];
-    if(endpoint.path?.startsWith("/lol-"))
+    if (endpoint.path?.startsWith("/lol-"))
         tags.push("Plugin " + endpoint.path.split("/")[1])
-    else if(endpoint.path?.startsWith("/{plugin}"))
+    else if (endpoint.path?.startsWith("/{plugin}"))
         tags.push("Plugin Asset Serving");
-    else 
+    else
         tags.push(endpoint.path!.split("/")[1])
 
-    const _tags = endpoint.tags;
     return {
         operationId: endpoint.name,
         description: endpoint.description,
-        tags,
+        tags: endpoint.tags.filter(tag => !["Plugins", "$remoting-binding-module"].includes(tag)),
         parameters,
         requestBody,
         responses: {
