@@ -157,11 +157,11 @@ export async function generateOpenAPIv3(schema: ExtendedHelp) {
         if (!t1.name.includes("Plugin") && t2.name.includes("Plugin"))
             return -1;
 
-        if(t1.name.includes("Plugin") && t2.name.includes("Plugin")) {
-            if(t1.name.includes("Plugin lol") && !t2.name.includes("Plugin lol"))
+        if (t1.name.includes("Plugin") && t2.name.includes("Plugin")) {
+            if (t1.name.includes("Plugin lol") && !t2.name.includes("Plugin lol"))
                 return 1;
 
-            if(!t1.name.includes("Plugin lol") && t2.name.includes("Plugin lol"))
+            if (!t1.name.includes("Plugin lol") && t2.name.includes("Plugin lol"))
                 return -1;
         }
 
@@ -247,10 +247,8 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
         })
 
         parameters.push(...params);
-
-        const returnType = getType({ type: endpoint.returns })
-        response = { content: { "application/json": { schema: returnType } }, description: "Success response" }
     } else {
+
         const bodyType = endpoint.arguments.slice(parameters.length).at(0);
         if (bodyType)
             requestBody = {
@@ -260,10 +258,10 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
                     }
                 }
             }
-
-        const returnType = getType({ type: endpoint.returns })
-        response = returnType !== undefined ? { content: { "application/json": { schema: returnType } }, description: "Success response" } : { description: "Success response" }
     }
+
+    const returnType = getType({ type: endpoint.returns })
+    response = returnType !== undefined ? { content: { "application/json": { schema: returnType } }, description: "Success response" } : { description: "Success response" }
 
     const tags: string[] = [];
     if (endpoint.path?.startsWith("/lol-"))
