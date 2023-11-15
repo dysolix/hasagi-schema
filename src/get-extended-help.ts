@@ -1,6 +1,7 @@
 import { HasagiClient } from "@hasagi/core";
 import fs from "fs/promises";
-import { Endpoint, ExtendedHelp } from "./types.js";
+import { Endpoint } from "./types.js";
+import { EXTENDED_HELP_FUNCTION_OVERRIDES } from "./overrides.js";
 
 type Schema = { types: any[], functions: any[], events: any[] }
 
@@ -99,64 +100,7 @@ async function getExtendedHelp(includeRawData?: boolean): Promise<Schema | { ext
         extendedSchema.events.push(fullEvent[0]);
     }
 
-    const FUNCTION_OVERRIDES: Record<string, Partial<Endpoint>> = {
-        "Help": {
-            method: "get",
-            path: "/help"
-        },
-        "Subscribe": {
-            method: "post",
-            path: "/subscribe"
-        },
-        "Unsubscribe": {
-            method: "post",
-            path: "/unsubscribe"
-        },
-        "AsyncDelete": {
-            method: "post",
-            path: "/AsyncDelete"
-        },
-        "AsyncResult": {
-            method: "post",
-            path: "/AsyncResult"
-        },
-        "AsyncStatus": {
-            method: "post",
-            path: "/AsyncStatus"
-        },
-        "Cancel": {
-            method: "post",
-            path: "/cancel"
-        },
-        "Exit": {
-            method: "post",
-            path: "/exit"
-        },
-        "WebSocketFormat": {
-            method: "post",
-            path: "/WebSocketFormat"
-        },
-        "LoggingGetEntries": {
-            method: "post",
-            path: "/LoggingGetEntries"
-        },
-        "LoggingMetrics": {
-            method: "post",
-            path: "/LoggingMetrics"
-        },
-        "LoggingMetricsMetadata": {
-            method: "post",
-            path: "/LoggingMetricsMetadata"
-        },
-        "LoggingStart": {
-            method: "post",
-            path: "/LoggingStart"
-        },
-        "LoggingStop": {
-            method: "post",
-            path: "/LoggingStop"
-        },
-    }
+    const FUNCTION_OVERRIDES = EXTENDED_HELP_FUNCTION_OVERRIDES;
 
     extendedSchema.functions.forEach((func: Endpoint) => {
         const override = FUNCTION_OVERRIDES[func.name];

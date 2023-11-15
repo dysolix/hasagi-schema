@@ -1,6 +1,6 @@
 {
   "name": "@hasagi/schema",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "scripts": {
     "build": "tsc && node scripts/postbuild.mjs",
     "publish": "npm run build && node scripts/prepublish.mjs && cd ./dist && npm publish --access public"

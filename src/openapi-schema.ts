@@ -1,5 +1,4 @@
 import { ComponentsObject, ExternalDocumentationObject, InfoObject, OpenAPIObject, OperationObject, ParameterObject, PathsObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject, SecurityRequirementObject, ServerObject, TagObject } from "./open-api-types.js";
-import { DataStructure } from "./types.js";
 import { formatFieldName } from "./util.js";
 
 const TYPE_OVERRIDES: { [key: string]: { rename?: string, definition?: string } } = {
