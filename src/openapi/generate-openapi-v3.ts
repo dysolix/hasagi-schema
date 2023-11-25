@@ -1,6 +1,6 @@
 import axios from "axios";
 import HasagiLiteClient from "@hasagi/core";
-import { Type, Endpoint, Event, ExtendedHelp } from "./types.js";
+import { Type, Endpoint, Event, XHelp } from "../get-extended-help.js";
 import { OpenAPIObject, OperationObject, ParameterObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject, SecurityRequirementObject } from "./open-api-types.js";
 
 function getRootType(input: Type): SchemaObject | ReferenceObject {
@@ -65,10 +65,9 @@ function getType(input: { type: { elementType: string; type: string; }; } | stri
     }
 }
 
-export async function generateOpenAPIv3(schema: ExtendedHelp) {
+export async function generateOpenAPIv3(schema: XHelp) {
     const client = new HasagiLiteClient();
     await client.connect();
-    const region = await client.request({ method: "get", url: "/riotclient/region-locale" });
     const { version } = await client.request({ method: "get", url: "/system/v1/builds" });
 
     const functionsWithMissingData: string[] = [];
