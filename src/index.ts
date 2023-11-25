@@ -1,14 +1,13 @@
-import { getExtendedHelp } from "./get-extended-help.js";
-import { generateOpenAPIv3 } from "./generate-openapi-v3.js";
-import OpenAPISchema from "./openapi-schema.js";
-import { ExtendedHelp } from "./types.js";
+import { XHelp, getExtendedHelp } from "./get-extended-help.js";
+import { generateOpenAPIv3 } from "./openapi/generate-openapi-v3.js";
+import OpenAPISchema from "./openapi/openapi-schema.js";
 import { getType } from "./util.js";
 
-async function getSwagger(xhelp: ExtendedHelp) {
+async function getSwagger(xhelp: XHelp) {
     return new OpenAPISchema(await generateOpenAPIv3(xhelp))
 }
 
-async function getTypeScript(swagger: OpenAPISchema, xhelp: ExtendedHelp, namespace?: string) {
+async function getTypeScript(swagger: OpenAPISchema, xhelp: XHelp, namespace?: string) {
     const lcuTypes = namespace ? `export namespace ${namespace} {\n\t${swagger.getTypeScriptInterfaces(namespace).join("\n\n").split("\n").join("\n\t")}\n}` : swagger.getTypeScriptInterfaces().join("\n\n")
 
     const importNamespace = namespace ?? "LCUTypes";

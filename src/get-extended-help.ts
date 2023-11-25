@@ -1,9 +1,73 @@
 import { HasagiClient } from "@hasagi/core";
 import fs from "fs/promises";
-import { Endpoint } from "./types.js";
 import { EXTENDED_HELP_FUNCTION_OVERRIDES } from "./overrides.js";
 
 type Schema = { types: any[], functions: any[], events: any[] }
+
+
+export interface Event {
+    description: string;
+    name: string;
+    nameSpace: string;
+    tags: string[];
+    type: {
+        elementType: string;
+        type: string;
+    };
+}
+
+export interface Endpoint {
+    arguments: {
+        name: string;
+        optional: boolean;
+        type: {
+            elementType: string;
+            type: string;
+        };
+        description: string;
+    }[];
+    async: string;
+    description: string;
+    help: string;
+    name: string;
+    nameSpace: string;
+    returns: {
+        elementType: string;
+        type: string;
+    };
+    tags: string[];
+    threadSafe: boolean;
+    method: string | null;
+    path: string | null;
+    pathParams: string[] | null;
+    overridden?: boolean;
+}
+
+export interface Type {
+    name: string;
+    values: {
+        description: string;
+        name: string;
+        value: number;
+    }[];
+    fields: {
+        description: string;
+        name: string;
+        offset: number;
+        optional: boolean;
+        type: {
+            elementType: string;
+            type: string;
+        };
+    }[];
+
+    description: string;
+    nameSpace: string;
+    size: number;
+    tags: string[];
+}
+
+export interface XHelp { types: Type[], functions: Endpoint[], events: Event[] }
 
 async function getExtendedHelp(includeRawData: true): Promise<{ extendedSchema: Schema; fullSchema: Schema; consoleSchema: Schema; }>
 async function getExtendedHelp(includeRawData?: boolean): Promise<Schema | { extendedSchema: Schema; fullSchema: Schema; consoleSchema: Schema; }>

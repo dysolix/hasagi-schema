@@ -1,4 +1,4 @@
-import { Endpoint } from "./types.js";
+import { Endpoint } from "./get-extended-help.js";
 
 export const EXTENDED_HELP_FUNCTION_OVERRIDES: Record<string, Partial<Endpoint>> = {
     "Help": {
@@ -57,4 +57,7 @@ export const EXTENDED_HELP_FUNCTION_OVERRIDES: Record<string, Partial<Endpoint>>
         method: "post",
         path: "/LoggingStop"
     },
+    "GetRiotclientRegionLocale": {
+        tags: ["riotclient"]
+    }
 }

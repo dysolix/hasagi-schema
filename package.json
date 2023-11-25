@@ -1,6 +1,6 @@
 {
   "name": "@hasagi/schema",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "scripts": {
     "build": "tsc && node scripts/postbuild.mjs",
     "publish": "npm run build && node scripts/prepublish.mjs && cd ./dist && npm publish --access public"
@@ -11,8 +11,8 @@
   "author": "dysolix",
   "license": "MIT",
   "dependencies": {
-    "@hasagi/core": "^0.2.2",
-    "axios": "^1.5.0"
+    "@hasagi/core": "^0.3.17",
+    "axios": "^1.6.2"
   },
   "devDependencies": {
     "@types/node": "^20.6.2",
