@@ -1,7 +1,12 @@
 import fs from "fs/promises";
 
+function requiresQuotes(fieldName: string) {
+    return fieldName.includes("-") || /\d/.test(fieldName)
+
+}
+
 export function formatFieldName(fieldName: string) {
-    if (fieldName.includes("-")) {
+    if (requiresQuotes(fieldName)) {
         return `"${fieldName}"`;
     }
     return fieldName;
@@ -42,4 +47,12 @@ export function getType(t: { type: string, elementType: string } | string, names
         default:
             return namespace ? `${namespace}.${typeof t === "string" ? t : t.type}` : typeof t === "string" ? t : t.type
     }
+}
+
+export function formatForArrayLabel(str: string) {
+    return kebabCaseToCamelCase(str).replace(/[^a-zA-Z_]/g, '');
+}
+
+function kebabCaseToCamelCase(str: string) {
+    return str.replace(/-([a-z])/g, g => g[1].toUpperCase());
 }
