@@ -12,7 +12,7 @@ async function getTypeScript(swagger: OpenAPISchema, xhelp: XHelp, namespace?: s
 
     const importNamespace = namespace ?? "LCUTypes";
 
-    const lcuEndpoints = `${namespace ? `import { ${namespace} } from "./lcu-types";` : `import * as ${importNamespace} from "./lcu-types";`}\n\n${swagger.getEndpointInterfaces(namespace)}`
+    const lcuEndpoints = `${namespace ? `import { ${namespace} } from "./lcu-types";` : `import * as ${importNamespace} from "./lcu-types";`}\n\n${await swagger.getEndpointInterfaces(importNamespace)}`
     const lcuEvents = `${namespace ? `import { ${namespace} } from "./lcu-types";` : `import * as LCUTypes from "./lcu-types";`}\n\nexport interface LCUWebSocketEvents {\n\t[key: string]: ${importNamespace}.PluginResourceEvent | ${importNamespace}.BindingCallbackEvent | ${importNamespace}.PluginLcdsEvent | ${importNamespace}.PluginRegionLocaleChangedEvent | ${importNamespace}.LogEvent | ${importNamespace}.PluginServiceProxyResponse\n\t${xhelp.events.filter((ev, i) => xhelp.events.findIndex(e => e.name === ev.name) === i).map(ev => `"${ev.name}": ${getType(ev.type, importNamespace)}`).join(",\n\t")}\n}`
 
     return {

@@ -1,5 +1,19 @@
 import { ComponentsObject, ExternalDocumentationObject, InfoObject, OpenAPIObject, OperationObject, ParameterObject, PathsObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject, SecurityRequirementObject, ServerObject, TagObject } from "./open-api-types.js";
-import { formatFieldName } from "../util.js";
+import { formatFieldName, formatForArrayLabel } from "../util.js";
+
+const DEFAULT_TYPES =
+    `   // @ts-expect-error
+    export type LCUEndpoint<Method extends HttpMethod, Path extends EndpointsWithMethod<Method>> = (...args: [...(LCUEndpoints[Path][Method]["path"] extends never ? [] : LCUEndpoints[Path][Method]["path"]), ...(LCUEndpointBodyType<Method, Path> extends never ? (LCUEndpointParams<Method, Path> extends never ? [] : {} extends LCUEndpointParams<Method, Path> ? [data?: LCUEndpointParams<Method, Path>] : [data: LCUEndpointParams<Method, Path>]) : [data: LCUEndpointBodyType<Method, Path>])]) => Promise<LCUEndpointResponseType<Method, Path>>
+    // @ts-expect-error
+    export type LCUEndpointResponseType<Method extends string, Path extends string> = Path extends keyof LCUEndpoints ? Method extends keyof LCUEndpoints[Path] ? LCUEndpoints[Path][Method]["response"] : unknown : unknown;
+    // @ts-expect-error
+    export type LCUEndpointBodyType<Method extends string, Path extends string> = Path extends keyof LCUEndpoints ? Method extends keyof LCUEndpoints[Path] ? LCUEndpoints[Path][Method]["body"] : unknown : unknown;
+    // @ts-expect-error
+    export type LCUEndpointParams<Method extends string, Path extends string> = Path extends keyof LCUEndpoints ? Method extends keyof LCUEndpoints[Path] ? LCUEndpoints[Path][Method]["params"] : unknown : unknown;
+    
+    export type EndpointsWithMethod<Method extends HttpMethod> = { [K in keyof LCUEndpoints]: LCUEndpoints[K] extends { [key in Method]: {} } ? K : never }[keyof LCUEndpoints]pointsWithMethod<Method extends HttpMethod> = { [K in keyof LCUEndpoints]: LCUEndpoints[K] extends { [key in Method]: {} } ? K : never }[keyof LCUEndpoints]
+    
+    export type HttpMethod = "delete" | "get" | "head" | "patch" | "post" | "put";`
 
 const TYPE_OVERRIDES: { [key: string]: { rename?: string, definition?: string } } = {
     "PluginResourceEvent": {
@@ -60,7 +74,7 @@ export default class OpenAPISchema implements OpenAPIObject {
         });
     }
 
-    getEndpointInterfaces(namespace?: string) {
+    async getEndpointInterfaces(namespace: string = "LCUTypes") {
         const endpoints: Record<string, Record<string, ReturnType<typeof getMethodInfo>>> = {}
         Object.entries(this.paths).forEach(([path, info]) => {
             endpoints[path] = {
@@ -76,22 +90,12 @@ export default class OpenAPISchema implements OpenAPIObject {
         let endpointsStr = "export interface LCUEndpoints {\n";
         Object.entries(endpoints).map(([path, r]) => {
             endpointsStr += `\t"${path}": {\n`
-            Object.entries(r).map(([method, types]) => endpointsStr += types !== undefined ? `\t\t${method}: { Parameters: ${types!.Parameter}, Body: ${types!.Body}, Response: ${types!.Response} }\n` : "")
+            Object.entries(r).map(([method, types]) => endpointsStr += types !== undefined ? `\t\t${method}: { path: ${types.path.length > 0 ? `[${types.path.map(p => `${formatForArrayLabel(p.name)}: ${p.type}`).join(", ")}]` : "never"}, ${types.params.length > 0 ? `params: { ${types!.params.map(p => `"${p.name}"${p.required ? "" : "?"}: ${p.type}`).join(", ")} }` : "params: never"}, body: ${types!.body}, response: ${types!.response} }\n` : "")
             endpointsStr += "\t},\n"
         }).join("\t");
         endpointsStr += "}"
 
-        return endpointsStr + "\n\n" +
-            `// @ts-expect-error
-export type LCUEndpoint<Method extends HttpMethod, Path extends EndpointsWithMethod<Method>> = LCUEndpointBodyType<Method, Path> extends never ? (...args: [...LCUEndpoints[Path][Method]["Parameters"]]) => Promise<LCUEndpointResponseType<Method, Path>> : (...args: [...LCUEndpoints[Path][Method]["Parameters"], body: LCUEndpointBodyType<Method, Path>]) => Promise<LCUEndpointResponseType<Method, Path>>
-// @ts-expect-error
-export type LCUEndpointResponseType<Method extends HttpMethod, Path extends EndpointsWithMethod<Method>> = LCUEndpoints[Path][Method]["Response"]
-// @ts-expect-error
-export type LCUEndpointBodyType<Method extends HttpMethod, Path extends EndpointsWithMethod<Method>> = LCUEndpoints[Path][Method]["Body"]
-
-export type EndpointsWithMethod<Method extends HttpMethod> = { [K in keyof LCUEndpoints]: LCUEndpoints[K] extends { [key in Method]: { } } ? K : never }[keyof LCUEndpoints]
-
-export type HttpMethod = "delete" | "get" | "head" | "patch" | "post" | "put";`
+        return endpointsStr + "\n\n" + DEFAULT_TYPES;
     }
 }
 
@@ -106,10 +110,11 @@ function getMethodInfo(info: OperationObject | undefined, namespace?: string) {
     const queryParamsObject = `{ ${queryParams.map(p => `"${p.name}"${p.required ? "" : "?"}: ${getTypeBySchemaObject(p.schema, namespace)}`).join(", ")} }`;
 
     return {
-        Parameter: `[${pathParamsObject}${queryParams.length > 0 ? `${pathParams.length > 0 ? ", " : ""}params${queryParams.some(p => p.required) ? "" : "?"}: ${queryParamsObject}` : ""}]`,
-        Body: info.requestBody !== undefined && "content" in info.requestBody ? getTypeBySchemaObject((info.requestBody as RequestBodyObject).content["application/json"]["schema"]!, namespace) : "never",
-        Response: info.responses["2XX"] !== undefined && "content" in info.responses["2XX"] ? getTypeBySchemaObject((info.responses["2XX"] as ResponseObject)["content"]!["application/json"]["schema"]!, namespace) : "void"
-    }
+        path: pathParams.map(p => ({ name: p.name, required: p.required, type: getTypeBySchemaObject(p.schema, namespace) })),
+        params: queryParams.map(p => ({ name: p.name, required: p.required, type: getTypeBySchemaObject(p.schema, namespace) })),
+        body: info.requestBody !== undefined && "content" in info.requestBody ? getTypeBySchemaObject((info.requestBody as RequestBodyObject).content["application/json"]["schema"]!, namespace) : "never",
+        response: info.responses["2XX"] !== undefined && "content" in info.responses["2XX"] ? getTypeBySchemaObject((info.responses["2XX"] as ResponseObject)["content"]!["application/json"]["schema"]!, namespace) : "void"
+    };
 }
 
 function getTypeBySchemaObject(schema: SchemaObject | ReferenceObject | undefined, namespace?: string): string {

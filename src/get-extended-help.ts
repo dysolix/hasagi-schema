@@ -40,6 +40,8 @@ export interface Endpoint {
     method: string | null;
     path: string | null;
     pathParams: string[] | null;
+
+    silentOverride?: boolean;
     overridden?: boolean;
 }
 
@@ -172,7 +174,8 @@ async function getExtendedHelp(includeRawData?: boolean): Promise<Schema | { ext
             return;
 
         Object.assign(func, override);
-        func.overridden = true;
+        if (!override.silentOverride)
+            func.overridden = true;
     });
 
     if (includeRawData)
