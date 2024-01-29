@@ -11,7 +11,7 @@ const DEFAULT_TYPES =
     // @ts-expect-error
     export type LCUEndpointParams<Method extends string, Path extends string> = Path extends keyof LCUEndpoints ? Method extends keyof LCUEndpoints[Path] ? LCUEndpoints[Path][Method]["params"] : unknown : unknown;
     
-    export type EndpointsWithMethod<Method extends HttpMethod> = { [K in keyof LCUEndpoints]: LCUEndpoints[K] extends { [key in Method]: {} } ? K : never }[keyof LCUEndpoints]pointsWithMethod<Method extends HttpMethod> = { [K in keyof LCUEndpoints]: LCUEndpoints[K] extends { [key in Method]: {} } ? K : never }[keyof LCUEndpoints]
+    export type EndpointsWithMethod<Method extends HttpMethod> = { [K in keyof LCUEndpoints]: LCUEndpoints[K] extends { [key in Method]: {} } ? K : never }[keyof LCUEndpoints];
     
     export type HttpMethod = "delete" | "get" | "head" | "patch" | "post" | "put";`
 
