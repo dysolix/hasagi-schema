@@ -81,9 +81,9 @@ async function getExtendedHelp(includeRawData?: boolean): Promise<Schema | { ext
     });
 
     const getHelpResult = await client.request({
-        method: "get",
-        url: "/help" as any
-    }).then(res => res.data as { types: Record<string, any>, functions: Record<string, any>, events: Record<string, any> });
+        method: "post",
+        url: "/Help"
+    }).then(res => res as { types: Record<string, any>, functions: Record<string, any>, events: Record<string, any> });
 
     const fullSchema: Schema = { events: [], functions: [], types: [] }
     const consoleSchema: Schema = { events: [], functions: [], types: [] }
