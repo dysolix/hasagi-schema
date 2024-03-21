@@ -132,12 +132,14 @@ async function getExtendedHelp(includeRawData?: boolean): Promise<Schema | { ext
             }
         }).then(res => res as any);
 
+        const path = consoleFunction[func].url != null ? (consoleFunction[func].url.startsWith("/") ? consoleFunction[func].url : "/" + consoleFunction[func].url) : null;
+
         fullSchema.functions.push(fullFunction[0]);
         consoleSchema.functions.push({ [func]: consoleFunction[func] });
         extendedSchema.functions.push({
             ...fullFunction[0],
             method: consoleFunction[func]["http_method"] ?? null,
-            path: consoleFunction[func].url ?? null,
+            path,
             pathParams: consoleFunction[func].url?.match(/{(.*?)}/g)?.map((str: string) => str.substring(1, str.length - 1)) ?? null
         })
     }
