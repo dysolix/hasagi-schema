@@ -1,5 +1,5 @@
 import axios from "axios";
-import HasagiLiteClient from "@hasagi/core";
+import { HasagiClient as HasagiLiteClient } from "@hasagi/core";
 import { Type, Endpoint, Event, XHelp } from "../get-extended-help.js";
 import { OpenAPIObject, OperationObject, ParameterObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject, SecurityRequirementObject } from "./open-api-types.js";
 
@@ -68,7 +68,7 @@ function getType(input: { type: { elementType: string; type: string; }; } | stri
 export async function generateOpenAPIv3(schema: XHelp) {
     const client = new HasagiLiteClient();
     await client.connect();
-    const { version } = await client.request({ method: "get", url: "/system/v1/builds" });
+    const { version } = await client.request("get", "/system/v1/builds");
 
     const functionsWithMissingData: string[] = [];
 
@@ -76,8 +76,8 @@ export async function generateOpenAPIv3(schema: XHelp) {
         openapi: "3.0.0",
         info: {
             title: "LCU SCHEMA",
-            description: "",
-            version
+            description: "OpenAPI v3 schema documenting the endpoints of the LCU API.",
+            version,
         },
         components: { schemas: {} },
         paths: {}
@@ -189,6 +189,7 @@ ${functionsWithMissingData.map(func => `${i++}.\t${func}`).join("\n")}
 4.  Don't automate anything Riot doesn't want you to (like ready check, bans, and champ selection)
 5.  If you can do it using the official Riot API, then don't do it using LCU.
 6.  Don't try to expose data that Riot wants to hide, e.g. names in ranked champ select.
+7.  Just because something isn't listed here doesn't mean it's allowed.
 
 ### Disclaimer
 
