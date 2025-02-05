@@ -59,7 +59,7 @@ function getType(input: { type: { elementType: string; type: string; }; } | stri
         case "object":
             return { type: "object", additionalProperties: true }
         case "":
-            return undefined;
+            return { type: "object", additionalProperties: true }
         default:
             return { $ref: `#/components/schemas/${type}` }
     }
