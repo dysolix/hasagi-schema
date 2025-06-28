@@ -1,5 +1,5 @@
 import { ComponentsObject, ExternalDocumentationObject, InfoObject, OpenAPIObject, OperationObject, ParameterObject, PathsObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject, SecurityRequirementObject, ServerObject, TagObject } from "./open-api-types.js";
-import { formatFieldName, formatForArrayLabel } from "../util.js";
+import { formatFieldName, formatForArrayLabel, getTypeScriptName } from "../util.js";
 
 const DEFAULT_TYPES =
     `export type LCUEndpoint<Method extends HttpMethod, Path extends EndpointsWithMethod<Method>> = (...args: [...(Path extends keyof LCUEndpoints ? Method extends keyof LCUEndpoints[Path] ? "path" extends keyof LCUEndpoints[Path][Method] ? LCUEndpoints[Path][Method]["path"] extends never ? [] : LCUEndpoints[Path][Method]["path"] : [] : [] : []), ...(LCUEndpointBodyType<Method, Path> extends never ? (LCUEndpointParams<Method, Path> extends never ? [] : {} extends LCUEndpointParams<Method, Path> ? [data?: LCUEndpointParams<Method, Path>] : [data: LCUEndpointParams<Method, Path>]) : [data: LCUEndpointBodyType<Method, Path>])]) => Promise<LCUEndpointResponseType<Method, Path>>
@@ -38,8 +38,9 @@ export default class OpenAPISchema implements OpenAPIObject {
         if (this.components?.schemas === undefined)
             return [];
 
-
         return Object.entries(this.components.schemas).map(([name, schema]) => {
+            name = getTypeScriptName(name);
+
             if (TYPE_OVERRIDES[name] && TYPE_OVERRIDES[name].definition)
                 return `export ${TYPE_OVERRIDES[TYPE_OVERRIDES[name].rename ?? name].definition}`.replaceAll("{{namespace}}", namespace !== undefined ? `${namespace}.` : "")
 
@@ -116,7 +117,7 @@ function getTypeBySchemaObject(schema: SchemaObject | ReferenceObject | undefine
         return "void";
 
     if ("$ref" in schema)
-        return `${namespace !== undefined ? `${namespace}.` : ""}${schema.$ref.split("/").at(-1)!}`;
+        return `${namespace !== undefined ? `${namespace}.` : ""}${schema.$ref.split("/").at(-1)!}`.replaceAll("-", "_");
 
     switch (schema.type) {
         case "string":
@@ -130,8 +131,12 @@ function getTypeBySchemaObject(schema: SchemaObject | ReferenceObject | undefine
             return getArrayTypeBySchemaObject(schema, namespace).split("\n").join("\n\t");
         case "object":
             return getObjectTypeBySchemaObject(schema, namespace).split("\n").join("\n\t");
-        default:
-            return `${namespace}.${TYPE_OVERRIDES[schema.type!].rename ? TYPE_OVERRIDES[schema.type!].rename : schema.type}` ?? "unknown";
+        default: {
+            if (schema.type === undefined)
+                return "unknown";
+
+            return `${namespace ? `${namespace}.` : ""}${schema.type}`;
+        }
     }
 }
 
