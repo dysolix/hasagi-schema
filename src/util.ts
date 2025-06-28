@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import { TYPESCRIPT_TYPE_NAME_OVERRIDES } from "./overrides.js";
 
 function requiresQuotes(fieldName: string) {
     return fieldName.includes("-") || /\d/.test(fieldName)
@@ -55,4 +56,19 @@ export function formatForArrayLabel(str: string) {
 
 function kebabCaseToCamelCase(str: string) {
     return str.replace(/-([a-z])/g, g => g[1].toUpperCase());
+}
+
+export function getTypeScriptName(input: string) {
+    input = input.replaceAll("-", "_");
+    if (TYPESCRIPT_TYPE_NAME_OVERRIDES[input])
+        input = TYPESCRIPT_TYPE_NAME_OVERRIDES[input];
+
+    return input;
+}
+
+export function getSwaggerTypeName(input: string) {
+    if (TYPESCRIPT_TYPE_NAME_OVERRIDES[input])
+        input = TYPESCRIPT_TYPE_NAME_OVERRIDES[input];
+
+    return input;
 }

@@ -2,6 +2,7 @@ import axios from "axios";
 import { HasagiClient as HasagiLiteClient } from "@hasagi/core";
 import { Type, Endpoint, Event, XHelp } from "../get-extended-help.js";
 import { OpenAPIObject, OperationObject, ParameterObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject, SecurityRequirementObject } from "./open-api-types.js";
+import { getSwaggerTypeName } from "../util.js";
 
 function getRootType(input: Type): SchemaObject | ReferenceObject {
     const isObject = input.fields.length > 0;
@@ -59,9 +60,9 @@ function getType(input: { type: { elementType: string; type: string; }; } | stri
         case "object":
             return { type: "object", additionalProperties: true }
         case "":
-            return { type: "object", additionalProperties: true }
+            return undefined //
         default:
-            return { $ref: `#/components/schemas/${type}` }
+            return { $ref: `#/components/schemas/${getSwaggerTypeName(type)}` }
     }
 }
 
@@ -222,13 +223,14 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
             parameters.push({
                 in: "query",
                 name: arg.name,
-                schema: getType(arg),
+                schema: getType(arg) ?? { type: "string" },
                 required: !arg.optional
             });
         });
     } else if (endpoint.method === "GET" || endpoint.method === "DELETE" || endpoint.method === "HEAD" || endpoint.method === "OPTIONS" || endpoint.method === "TRACE") {
         const params: ParameterObject[] = endpoint.arguments.slice(parameters.length).flatMap(arg => {
-            const type = getType(arg);
+            console.log(arg);
+            const type = getType(arg) ?? { type: "object", additionalProperties: true };
             if ("$ref" in type!) {
                 const schemaObject = schema!.components!.schemas![type.$ref.split("/").at(-1)!] as SchemaObject;
                 if (schemaObject.properties)
@@ -250,7 +252,7 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
                     in: "query",
                     required: !arg.optional,
                     name: arg.name,
-                    schema: getType(arg)
+                    schema: getType(arg) ?? { type: "string" }
                 }
             }
         })
@@ -271,6 +273,15 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
 
     const returnType = getType({ type: endpoint.returns })
     response = returnType !== undefined ? { content: { "application/json": { schema: returnType } }, description: "Success response" } : { description: "Success response" }
+
+    // Ensure GET endpoints have "content" set to comply with Swagger schema rules
+    if (endpoint.method === "GET" && !response.content) {
+        response.content = {
+            "application/json": {
+                schema: { type: "object" }
+            }
+        }
+    }
 
     const tags: string[] = [];
     if (endpoint.path?.startsWith("/lol-"))

@@ -61,3 +61,9 @@ export const EXTENDED_HELP_FUNCTION_OVERRIDES: Record<string, Partial<Endpoint>>
         tags: ["riotclient"]
     }
 }
+
+export const TYPESCRIPT_TYPE_NAME_OVERRIDES: Record<string, string> = {
+    "LolMissionsCapMissionSeries": "LolMissionsCAPMissionSeries",
+    "LolObjectivesCapMissionSeries": "LolObjectivesCAPMissionSeries",
+    "LolTftEventCapMissionSeries": "LolTftEventCAPMissionSeries"
+}
