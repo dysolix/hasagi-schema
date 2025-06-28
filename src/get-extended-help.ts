@@ -2,8 +2,7 @@ import { HasagiClient } from "@hasagi/core";
 import fs from "fs/promises";
 import { EXTENDED_HELP_FUNCTION_OVERRIDES } from "./overrides.js";
 
-type Schema = { types: any[], functions: any[], events: any[] }
-
+type LCUHelpSchema = { types: any[], functions: any[], events: any[] }
 
 export interface Event {
     description: string;
@@ -71,9 +70,9 @@ export interface Type {
 
 export interface XHelp { types: Type[], functions: Endpoint[], events: Event[] }
 
-async function getExtendedHelp(includeRawData: true): Promise<{ extendedSchema: Schema; fullSchema: Schema; consoleSchema: Schema; }>
-async function getExtendedHelp(includeRawData?: boolean): Promise<Schema | { extendedSchema: Schema; fullSchema: Schema; consoleSchema: Schema; }>
-async function getExtendedHelp(includeRawData?: boolean): Promise<Schema | { extendedSchema: Schema; fullSchema: Schema; consoleSchema: Schema; }> {
+async function getExtendedHelp(includeRawData: true): Promise<{ extendedSchema: LCUHelpSchema; fullSchema: LCUHelpSchema; consoleSchema: LCUHelpSchema; }>
+async function getExtendedHelp(includeRawData?: boolean): Promise<LCUHelpSchema>
+async function getExtendedHelp(includeRawData?: boolean): Promise<LCUHelpSchema | { extendedSchema: LCUHelpSchema; fullSchema: LCUHelpSchema; consoleSchema: LCUHelpSchema; }> {
     const client = new HasagiClient();
     await client.connect({
         useWebSocket: false,
@@ -85,9 +84,9 @@ async function getExtendedHelp(includeRawData?: boolean): Promise<Schema | { ext
         url: "/Help"
     }).then(res => res as { types: Record<string, any>, functions: Record<string, any>, events: Record<string, any> });
 
-    const fullSchema: Schema = { events: [], functions: [], types: [] }
-    const consoleSchema: Schema = { events: [], functions: [], types: [] }
-    const extendedSchema: Schema = { events: [], functions: [], types: [] }
+    const fullSchema: LCUHelpSchema = { events: [], functions: [], types: [] }
+    const consoleSchema: LCUHelpSchema = { events: [], functions: [], types: [] }
+    const extendedSchema: LCUHelpSchema = { events: [], functions: [], types: [] }
 
     for (const type in getHelpResult.types) {
         const fullType = await client.request({
@@ -191,3 +190,5 @@ async function getExtendedHelp(includeRawData?: boolean): Promise<Schema | { ext
 }
 
 export { getExtendedHelp };
+
+const x = await getExtendedHelp()
