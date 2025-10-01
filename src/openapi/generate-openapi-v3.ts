@@ -4,6 +4,25 @@ import { Type, Endpoint, Event, XHelp } from "../get-extended-help.js";
 import { OpenAPIObject, OperationObject, ParameterObject, ReferenceObject, RequestBodyObject, ResponseObject, SchemaObject, SecurityRequirementObject } from "./open-api-types.js";
 import { getSwaggerTypeName } from "../util.js";
 
+const desc = 
+`Schema of the League Client Update (LCU) Rest API. Auto-generated using LCU's /help endpoint
+
+### Rules
+
+1.  No interacting with shop
+2.  No interacting with chat
+3.  No interacting with anything authentication related
+4.  Don't automate anything Riot doesn't want you to (e.g. ready check, picks and bans)
+5.  If you can do it using the official Riot API, then don't do it using LCU. Don't spam requests
+6.  Don't try to expose data that Riot wants to hide (e.g. names in ranked champ select)
+7.  Just because something is not listed here does not mean it is allowed
+8.  Register your application with Riot (https://developer.riotgames.com/)
+
+### Disclaimer
+
+dysolix.dev is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. 
+Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc`;
+
 function getRootType(input: Type): SchemaObject | ReferenceObject {
     const isObject = input.fields.length > 0;
     const isEnum = input.values.length > 0;
@@ -81,7 +100,8 @@ export async function generateOpenAPIv3(schema: XHelp) {
             version,
         },
         components: { schemas: {} },
-        paths: {}
+        paths: {},
+        externalDocs: { url: "https://discord.com/invite/riotgamesdevrel", description: "Riot Games Third Party Developer Community Discord" },
     }
 
     let tags: string[] = [];
@@ -175,27 +195,7 @@ export async function generateOpenAPIv3(schema: XHelp) {
     })
 
     let i = 1;
-    openAPISchema.info.description =
-        `
-Auto-generated using LCU's /help endpoint.
-The following endpoints are not entirely auto-generated because their /help response is missing necessary fields:
-
-${functionsWithMissingData.map(func => `${i++}.\t${func}`).join("\n")}
-
-### Rules
-
-1.  No interacting with shop.
-2.  No interacting with chat.
-3.  No interacting with anything authentication related.
-4.  Don't automate anything Riot doesn't want you to (like ready check, bans, and champ selection)
-5.  If you can do it using the official Riot API, then don't do it using LCU.
-6.  Don't try to expose data that Riot wants to hide, e.g. names in ranked champ select.
-7.  Just because something isn't listed here doesn't mean it's allowed.
-
-### Disclaimer
-
-dysolix.dev is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. 
-Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc`
+    openAPISchema.info.description = desc.replace("%missing_data%", functionsWithMissingData.map(func => `${i++}.\t${func}`).join("\n"));
 
     return openAPISchema;
 }
@@ -229,7 +229,6 @@ function endpointToOperation(endpoint: Endpoint, schema: OpenAPIObject): Operati
         });
     } else if (endpoint.method === "GET" || endpoint.method === "DELETE" || endpoint.method === "HEAD" || endpoint.method === "OPTIONS" || endpoint.method === "TRACE") {
         const params: ParameterObject[] = endpoint.arguments.slice(parameters.length).flatMap(arg => {
-            console.log(arg);
             const type = getType(arg) ?? { type: "object", additionalProperties: true };
             if ("$ref" in type!) {
                 const schemaObject = schema!.components!.schemas![type.$ref.split("/").at(-1)!] as SchemaObject;
