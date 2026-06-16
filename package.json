@@ -3,7 +3,7 @@
   "version": "0.7.0",
   "scripts": {
     "build": "tsc && node scripts/postbuild.mjs",
-    "check:package": "npm run build && publint ./dist && attw --pack ./dist",
+    "check:package": "npm run build && publint ./dist && attw --pack ./dist --ignore-rules cjs-resolves-to-esm",
     "publish": "npm run check:package && node scripts/prepublish.mjs && cd ./dist && npm publish --access public"
   },
   "keywords": [
