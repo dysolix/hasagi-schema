@@ -3,6 +3,7 @@ import fs from "fs/promises";
 await fs.copyFile("./src/types.d.ts", "./dist/types.d.ts");
 await fs.copyFile("./src/openapi/open-api-types.d.ts", "./dist/openapi/open-api-types.d.ts")
 await fs.copyFile("./LICENSE", "./dist/LICENSE");
+await fs.copyFile("./README.md", "./dist/README.md");
 
 const packageObj = JSON.parse(await fs.readFile("./package.json", "utf8"));
 delete packageObj.private;
