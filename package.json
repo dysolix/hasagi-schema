@@ -13,8 +13,8 @@
   "author": "dysolix",
   "license": "MIT",
   "dependencies": {
-    "@hasagi/core": "^0.6.3",
-    "axios": "^1.7.9"
+    "@hasagi/core": "^0.7.0",
+    "axios": "^1.17.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.3",
@@ -30,6 +30,6 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dysolix/hasagi-schema.git"
+    "url": "git+https://github.com/dysolix/hasagi-schema.git"
   }
 }
