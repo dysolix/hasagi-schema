@@ -13,7 +13,7 @@
   "author": "dysolix",
   "license": "MIT",
   "dependencies": {
-    "@hasagi/core": "^0.7.0",
+    "@hasagi/core": "0.7.0",
     "axios": "^1.17.0"
   },
   "devDependencies": {
