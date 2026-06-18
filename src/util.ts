@@ -37,9 +37,9 @@ export function getType(t: { type: string, elementType: string } | string, names
         case "bool":
             return "boolean"
         case "vector":
-            return `${getType((t as any).elementType), namespace}[]`
+            return `${getType((t as any).elementType, namespace)}[]`
         case "map": {
-            return `Record<string | number, ${getType((t as any).elementType), namespace}>`
+            return `Record<string | number, ${getType((t as any).elementType, namespace)}>`
         }
         case "object":
             return `Record<string, unknown>`
