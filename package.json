@@ -7,7 +7,12 @@
     "check:package": "npm run build && publint ./dist && attw --pack ./dist --ignore-rules cjs-resolves-to-esm",
     "test": "npm run test:typecheck && vitest run",
     "test:typecheck": "tsc -p tsconfig.test.json",
-    "release": "npm run check:package && cd ./dist && npm publish --access public"
+    "release": "npm run check:package && cd ./dist && npm publish --access public",
+    "changelog": "node scripts/changelog-stub.mjs",
+    "postversion": "npm run changelog",
+    "version:patch": "npm version patch --ignore-scripts=false",
+    "version:minor": "npm version minor --ignore-scripts=false",
+    "version:major": "npm version major --ignore-scripts=false"
   },
   "keywords": [
     "hasagi"
